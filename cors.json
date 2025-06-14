@@ -1,0 +1,6 @@
+echo '[{
+  "origin": ["*"],
+  "method": ["GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS"],
+  "responseHeader": ["Content-Type"],
+  "maxAgeSeconds": 3600
+}]' > cors.json
