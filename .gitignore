@@ -3,3 +3,4 @@ models/frozen_inference_graph.pb
 AI_Cheating_Reports/
 *.mp4
 serviceAccountKey.json
+models/frozen_inference_graph.pb
