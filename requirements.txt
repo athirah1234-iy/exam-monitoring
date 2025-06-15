@@ -19,3 +19,5 @@ tqdm==4.66.1
 requests==2.31.0
 pyyaml==6.0.1
 mediapipe==0.10.9  # Added for hand detection
+gunicorn==20.1.0
+falsk==2.3.2
