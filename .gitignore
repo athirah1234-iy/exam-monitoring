@@ -4,3 +4,8 @@ AI_Cheating_Reports/
 *.mp4
 serviceAccountKey.json
 models/frozen_inference_graph.pb
+.idea/
+venv/
+*.pt
+TEMP_DOWNLOADS/
+__pycache__/
