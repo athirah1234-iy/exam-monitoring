@@ -9,48 +9,43 @@ from ultralytics import YOLO
 import mediapipe as mp
 
 # ========= CONFIG ========= #
-FIREBASE_CREDENTIALS_FILE = "serviceAccountKey.json"
-FIREBASE_BUCKET = "exam-surveillance.firebasestorage.app"  # ✅ Use correct bucket format
-TELEGRAM_BOT_TOKEN = "7556496216:AAEnklt80gw-kF7ZHFRA2o7D91YDKCeXMNU"
-TELEGRAM_CHAT_ID = "1042670358"
+FIREBASE_BUCKET = "exam-surveillance.firebasestorage.app"  # 🚀 Replace with your bucket
+TELEGRAM_BOT_TOKEN = "7556496216:AAEnklt80gw-kF7ZHFRA2o7D91YDKCeXMNU"  # 🚀 Replace
+TELEGRAM_CHAT_ID = "1042670358"  # 🚀 Replace
 TEMP_FOLDER = "TEMP_DOWNLOADS"
 OUTPUT_DIR = "AI_Cheating_Reports"
-MODEL_PATH = "yolov8n-pose.pt"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(TEMP_FOLDER, exist_ok=True)
 
-# ========= INIT MODELS ========= #
-cv2.ocl.setUseOpenCL(False)  # ✅ Disable OpenCL to avoid GPU hangs
-pose_model = YOLO(MODEL_PATH)
-mp_hands = mp.solutions.hands
-PHONE_CLASS_ID = 77
-
-# ========= DNN SETUP (phone detection) ========= #
-cv_net = cv2.dnn.readNetFromTensorflow(
-    "models/frozen_inference_graph.pb",
-    "models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"
-)
-
-# ========= TELEGRAM ALERT ========= #
-def send_telegram(message: str):
-    try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': message}
-        r = requests.post(url, json=payload, timeout=10)
-        r.raise_for_status()
-        print("✅ Telegram alert sent.")
-    except Exception as e:
-        print(f"❌ Telegram failed: {e}")
+# ========= MODEL DOWNLOADER ========= #
+def download_model(bucket, remote_path, local_dir="/tmp/models"):
+    """Downloads files from Firebase Storage to /tmp/models/"""
+    os.makedirs(local_dir, exist_ok=True)
+    blob = bucket.blob(remote_path)
+    local_path = os.path.join(local_dir, os.path.basename(remote_path))
+    blob.download_to_filename(local_path)
+    print(f"⬇️ Downloaded model: {remote_path} → {local_path}")
+    return local_path
 
 # ========= INIT FIREBASE ========= #
 def initialize_firebase():
     try:
         firebase_admin.get_app()
     except ValueError:
-        cred = credentials.Certificate(FIREBASE_CREDENTIALS_FILE)
+        # 🚨 Remove FIREBASE_CREDENTIALS_FILE! Render uses /etc/secrets/
+        cred = credentials.Certificate(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
         firebase_admin.initialize_app(cred, {'storageBucket': FIREBASE_BUCKET})
-    print("✅ Firebase initialized")
     return storage.bucket()
+
+# ========= INIT MODELS ========= #
+bucket = initialize_firebase()
+YOLO_MODEL_PATH = download_model(bucket, "models/yolov8n-pose.pt")  # 🚀 Path in Firebase
+pose_model = YOLO(YOLO_MODEL_PATH)
+
+# Download DNN models
+DNN_MODEL_PATH = download_model(bucket, "models/frozen_inference_graph.pb")  # 🚀 Replace
+DNN_CONFIG_PATH = download_model(bucket, "models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt")  # 🚀 Replace
+cv_net = cv2.dnn.readNetFromTensorflow(DNN_MODEL_PATH, DNN_CONFIG_PATH)
 
 # ========= DOWNLOAD FROM FIREBASE ========= #
 def download_videos(bucket):

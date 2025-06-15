@@ -1,0 +1,40 @@
+# ========== WEB SERVER (for upload.html) ========== #
+services:
+  - type: web
+    name: exam-surveillance-web
+    runtime: python
+    pythonVersion: "3.9"
+    buildCommand: |
+      pip install -r requirements.txt
+      mkdir -p /tmp/models  # Create folder for Firebase-downloaded models
+    startCommand: python server.py  # Your Flask server (serves upload.html)
+    envVars:
+      - key: FIREBASE_STORAGE_BUCKET
+        value: "exam-surveillance.firebasestorage.app"  # 🚀 Replace with your bucket
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-key.json  # ✅ Fixed path for Render secrets
+
+# ========== BACKGROUND WORKER (main.py) ========== #
+  - type: worker
+    name: exam-surveillance-worker
+    runtime: python
+    pythonVersion: "3.9"
+    buildCommand: |
+      pip install -r requirements.txt
+      mkdir -p /tmp/models  # Ensure model storage exists
+    startCommand: python main.py  # Your analysis script
+    envVars:
+      - key: FIREBASE_STORAGE_BUCKET
+        syncEnv: true  # Shares the web service's bucket name
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        syncEnv: true  # Shares the same Firebase key
+      - key: TELEGRAM_BOT_TOKEN
+        value: "7556496216:AAEnklt80gw-kF7ZHFRA2o7D91YDKCeXMNU"  # 🚀 Replace
+      - key: TELEGRAM_CHAT_ID
+        value: "1042670358"  # 🚀 Replace
+      - key: PYTHONUNBUFFERED
+        value: "1"  # Ensures real-time logs in Render
+
+# ========== ADVANCED SETTINGS ========== #
+    plan: free
+    healthCheckPath: /health
