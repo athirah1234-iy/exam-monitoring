@@ -1,34 +1,36 @@
 services:
-  # Web Service (Flask for upload.html) - Starter Plan
+  # Web Service (Flask)
   - type: web
     name: exam-surveillance-web
-    plan: starter  # 🚀 Upgraded from free
+    plan: starter
     runtime: python
     pythonVersion: "3.9"
     buildCommand: |
+      pip install --upgrade pip
       pip install -r requirements.txt
       mkdir -p /tmp/models
-    startCommand: gunicorn --bind 0.0.0.0:$PORT server:app  # Production-ready
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --timeout 120 server:app  # Added timeout
     envVars:
       - key: FIREBASE_STORAGE_BUCKET
-        value: "exam-surveillance.firebasestorage.app"  # ✅ Standard Firebase format
+        value: "exam-surveillance.firebasestorage.app"  # 🚨 Changed to .appspot.com format
       - key: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/secrets/firebase-key.json
-    healthCheckPath: /health  # Optional: Add a /health route in server.py
+    healthCheckPath: /health
 
-  # Worker Service (main.py analysis) - Starter Plan  
+  # Worker Service
   - type: worker
     name: exam-surveillance-worker
-    plan: starter  # 🚀 Upgraded from free
+    plan: starter
     runtime: python
     pythonVersion: "3.9"
     buildCommand: |
+      pip install --upgrade pip
       pip install -r requirements.txt
       mkdir -p /tmp/models
     startCommand: python main.py
     envVars:
       - key: FIREBASE_STORAGE_BUCKET
-        syncEnv: true  # Shares web service's bucket
+        syncEnv: true
       - key: GOOGLE_APPLICATION_CREDENTIALS
         syncEnv: true
       - key: TELEGRAM_BOT_TOKEN
